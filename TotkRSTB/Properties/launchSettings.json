@@ -1,0 +1,8 @@
+{
+  "profiles": {
+    "TotkRSTB": {
+      "commandName": "Project",
+      "commandLineArgs": "--patch ResourceSizeTable.Product.112_Original.rsizetable.zs ResourceSizeTable.Product.112.rsizetable._patch.yaml ResourceSizeTable.Product.112_output.rsizetable.zs"
+    }
+  }
+}
