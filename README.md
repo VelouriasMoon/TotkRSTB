@@ -5,7 +5,7 @@
 Converting to yaml `TotkRSTB.exe [.yaml file]`  
 Converting to RESTBL `TotkRSTB.exe [.rsizetable.zs file]`  
 Merging `TotkRSTB.exe [--merge/-m] {Vanilla RSTB} {Modded RSTB} {Output RSTB Name}`  
-Patching `TotkRSTB.exe [--patch/-p] {Vanilla RSTB} {RSTB Yaml patch} {Output RSTB Name}`
+Patching `TotkRSTB.exe [--patch/-p] {Vanilla RSTB} {RSTB Yaml patch} {Output RSTB Name}`  
 Make Patch `TotkRSTB.exe [--makepatch/-mp] {Vanilla RSTB} {Modded RSTB}`
 
 Note: TotkRSTB will always choose the entry with the highest value, removing entries will result in the program choosing the vanilla.
