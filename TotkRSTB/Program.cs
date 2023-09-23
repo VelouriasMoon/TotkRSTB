@@ -2,6 +2,7 @@
 using RstbLibrary.Calculations;
 using RstbLibrary.Core;
 using System.Collections;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Globalization;
 using System.Linq;
@@ -164,21 +165,65 @@ namespace TotkRSTB
             // For keys that exist in both dictionaries, it takes the larger value from ModdedRSTB.CrcMap.
             // For keys that exist only in ModdedRSTB.CrcMap, it adds them to the result.
             // The result is a SortedDictionary with the updated or merged key-value pairs.
-            rstb.CrcMap = new SortedDictionary<uint, uint>(
-                VanillaRSTB.CrcMap
-                    .Select(x => new KeyValuePair<uint, uint>(x.Key, ModdedRSTB.CrcMap.TryGetValue(x.Key, out uint value) && value > x.Value ? value : x.Value))
-                    .Concat(ModdedRSTB.CrcMap.Where(x => !VanillaRSTB.CrcMap.ContainsKey(x.Key))) // Append entries not in VanillaRSTB.CrcMap
-                    .ToDictionary(x => x.Key, x => x.Value));
+            var resultCrcDict = new ConcurrentDictionary<uint, uint>();
+
+            // Process the keys that exist in both dictionaries in parallel
+            Parallel.ForEach(VanillaRSTB.CrcMap, kvp =>
+            {
+                if (ModdedRSTB.CrcMap.TryGetValue(kvp.Key, out uint value) && value > kvp.Value)
+                {
+                    resultCrcDict.TryAdd(kvp.Key, value);
+                }
+                else
+                {
+                    resultCrcDict.TryAdd(kvp.Key, kvp.Value);
+                }
+            });
+
+            // Process the keys that exist only in ModdedRSTB.CrcMap in parallel
+            Parallel.ForEach(ModdedRSTB.CrcMap, kvp =>
+            {
+                if (!VanillaRSTB.CrcMap.ContainsKey(kvp.Key))
+                {
+                    resultCrcDict.TryAdd(kvp.Key, kvp.Value);
+                }
+            });
+
+            // Create a SortedDictionary from the ConcurrentDictionary
+            var sortedCrcDict = new SortedDictionary<uint, uint>(resultCrcDict);
+            rstb.CrcMap = sortedCrcDict;
 
             // This code is combining two dictionaries (VanillaRSTB.NameMap and ModdedRSTB.NameMap) into a new SortedDictionary.
             // For keys that exist in both dictionaries, it takes the larger value from ModdedRSTB.NameMap.
             // For keys that exist only in ModdedRSTB.NameMap, it adds them to the result.
             // The result is a SortedDictionary with the updated or merged key-value pairs.
-            rstb.NameMap = new SortedDictionary<string, uint>(
-                VanillaRSTB.NameMap
-                    .Select(x => new KeyValuePair<string, uint>(x.Key, ModdedRSTB.NameMap.TryGetValue(x.Key, out uint value) && value > x.Value ? value : x.Value))
-                    .Concat(ModdedRSTB.NameMap.Where(x => !VanillaRSTB.NameMap.ContainsKey(x.Key))) // Append entries not in VanillaRSTB.NameMap
-                    .ToDictionary(x => x.Key, x => x.Value));
+            var resultNameMapDict = new ConcurrentDictionary<string, uint>();
+
+            // Process the keys that exist in both dictionaries in parallel
+            Parallel.ForEach(VanillaRSTB.NameMap, kvp =>
+            {
+                if (ModdedRSTB.NameMap.TryGetValue(kvp.Key, out uint value) && value > kvp.Value)
+                {
+                    resultNameMapDict.TryAdd(kvp.Key, value);
+                }
+                else
+                {
+                    resultNameMapDict.TryAdd(kvp.Key, kvp.Value);
+                }
+            });
+
+            // Process the keys that exist only in ModdedRSTB.NameMap in parallel
+            Parallel.ForEach(ModdedRSTB.NameMap, kvp =>
+            {
+                if (!VanillaRSTB.NameMap.ContainsKey(kvp.Key))
+                {
+                    resultNameMapDict.TryAdd(kvp.Key, kvp.Value);
+                }
+            });
+
+            // Create a SortedDictionary from the ConcurrentDictionary
+            var sortedNameMapDict = new SortedDictionary<string, uint>(resultNameMapDict);
+            rstb.NameMap = sortedNameMapDict;
 
 
             File.WriteAllBytes(outname, HashTable.CompressData(rstb.ToBinary().ToArray()));
