@@ -2,6 +2,9 @@
 
 namespace TotkRSTB;
 
+// Credit to @ArchLeaders for this code
+// https://github.com/NX-Editor/NxEditor/blob/0.3.7-alpha/src/NxEditor.Core/Utils/Crc32.cs
+
 /// <summary>
 /// Computes a CRC32 checksum.
 /// </summary>
