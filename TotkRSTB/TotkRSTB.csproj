@@ -13,7 +13,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\..\..\..\..\..\Programs\RstbLibrary\src\RstbLibrary.csproj" />
+    <ProjectReference Include="..\..\RstbLibrary\src\RstbLibrary.csproj" />
   </ItemGroup>
 
   <ItemGroup>

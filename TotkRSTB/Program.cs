@@ -147,27 +147,39 @@ namespace TotkRSTB
             string[] yaml = File.ReadAllLines(patch);
             RSTB ModdedRSTB = new RSTB();
             RSTB rstb = new RSTB();
-            HashTable hashtable = new HashTable();
 
             foreach (string line in yaml)
             {
-                if (uint.TryParse(line.Split(':')[0].Substring(2), NumberStyles.HexNumber, CultureInfo.InvariantCulture, out uint hash))
+                uint keyHash = Crc32.Compute(line.Split(':')[0]);
+
+                if (uint.TryParse(line.Split(':')[0].Substring(2), NumberStyles.HexNumber, CultureInfo.InvariantCulture, out uint hash)) // Use Hash
                     ModdedRSTB.CrcMap.Add(hash, uint.Parse(line.Split(':')[1].Trim()));
-                else if (hashtable.Hashes.ContainsKey(line.Split(':')[0]))
-                    ModdedRSTB.CrcMap.Add(hashtable.Hashes[line.Split(':')[0]], uint.Parse(line.Split(':')[1].Trim()));
+                else if (VanillaRSTB.CrcMap.ContainsKey(keyHash)) // Convert string to hash
+                    ModdedRSTB.CrcMap.Add(keyHash, uint.Parse(line.Split(':')[1].Trim()));
                 else
-                    ModdedRSTB.NameMap.Add(line.Split(':')[0], uint.Parse(line.Split(':')[1].Trim()));
+                    ModdedRSTB.CrcMap.Add(keyHash, uint.Parse(line.Split(':')[1].Trim()));
             }
 
+            // This code is combining two dictionaries (VanillaRSTB.CrcMap and ModdedRSTB.CrcMap) into a new SortedDictionary.
+            // For keys that exist in both dictionaries, it takes the larger value from ModdedRSTB.CrcMap.
+            // For keys that exist only in ModdedRSTB.CrcMap, it adds them to the result.
+            // The result is a SortedDictionary with the updated or merged key-value pairs.
             rstb.CrcMap = new SortedDictionary<uint, uint>(
                 VanillaRSTB.CrcMap
-                .Select(x => new KeyValuePair<uint, uint>(x.Key, ModdedRSTB.CrcMap.TryGetValue(x.Key, out uint value) && value > x.Value ? value : x.Value))
-                .ToDictionary(x => x.Key, x => x.Value));
+                    .Select(x => new KeyValuePair<uint, uint>(x.Key, ModdedRSTB.CrcMap.TryGetValue(x.Key, out uint value) && value > x.Value ? value : x.Value))
+                    .Concat(ModdedRSTB.CrcMap.Where(x => !VanillaRSTB.CrcMap.ContainsKey(x.Key))) // Append entries not in VanillaRSTB.CrcMap
+                    .ToDictionary(x => x.Key, x => x.Value));
 
+            // This code is combining two dictionaries (VanillaRSTB.NameMap and ModdedRSTB.NameMap) into a new SortedDictionary.
+            // For keys that exist in both dictionaries, it takes the larger value from ModdedRSTB.NameMap.
+            // For keys that exist only in ModdedRSTB.NameMap, it adds them to the result.
+            // The result is a SortedDictionary with the updated or merged key-value pairs.
             rstb.NameMap = new SortedDictionary<string, uint>(
                 VanillaRSTB.NameMap
-                .Select(x => new KeyValuePair<string, uint>(x.Key, ModdedRSTB.NameMap.TryGetValue(x.Key, out uint value) && value > x.Value ? value : x.Value))
-                .ToDictionary(x => x.Key, x => x.Value));
+                    .Select(x => new KeyValuePair<string, uint>(x.Key, ModdedRSTB.NameMap.TryGetValue(x.Key, out uint value) && value > x.Value ? value : x.Value))
+                    .Concat(ModdedRSTB.NameMap.Where(x => !VanillaRSTB.NameMap.ContainsKey(x.Key))) // Append entries not in VanillaRSTB.NameMap
+                    .ToDictionary(x => x.Key, x => x.Value));
+
 
             File.WriteAllBytes(outname, HashTable.CompressData(rstb.ToBinary().ToArray()));
         }
